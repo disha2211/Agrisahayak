@@ -1,21 +1,23 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
+from app.api.routes.health import router as health_router
+from app.core.config import settings
+from app.core.logger import logger
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting AgriSahayak AI Backend...")
+    yield
+    logger.info("Shutting down AgriSahayak AI Backend...")
+
+
 app = FastAPI(
-    title="AgriSahayak AI",
-    version="1.0.0",
-    description="AI-powered multi-agent assistant for farmers."
+    title=settings.PROJECT_NAME,
+    version=settings.PROJECT_VERSION,
+    lifespan=lifespan
 )
 
-
-@app.get("/")
-async def root():
-    return {
-        "message": "Welcome to AgriSahayak AI 🚜"
-    }
-
-
-@app.get("/health")
-async def health():
-    return {
-        "status": "healthy"
-    }
+app.include_router(health_router)
