@@ -18,4 +18,22 @@ class DiseaseModel:
             verbose=False
         )
 
-        return results
+        output = []
+
+        result = results[0]
+        names = result.names
+
+        for box in result.boxes:
+            cls = int(box.cls.item())
+            confidence = float(box.conf.item())
+            disease_name = names[cls]
+            output.append(
+                 {
+                "disease": disease_name,
+                "confidence": round(confidence, 3)
+            }
+        )
+
+
+
+        return output
