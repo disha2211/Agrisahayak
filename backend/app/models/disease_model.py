@@ -2,14 +2,24 @@ from pathlib import Path
 
 from ultralytics import YOLO
 
+from app.exceptions.disease import (
+    ModelNotLoadedException,
+)
+
 
 class DiseaseModel:
 
-    def __init__(self, model_path: str):
+    def __init__(self, model_path):
 
-        self.model_path = Path(model_path)
+        path = Path(model_path)
 
-        self.model = YOLO(self.model_path)
+        if not path.exists():
+
+            raise ModelNotLoadedException(
+                f"{model_path} not found."
+            )
+
+        self.model = YOLO(path)
 
     def predict(self, image_path: str):
 

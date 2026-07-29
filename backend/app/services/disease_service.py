@@ -1,4 +1,6 @@
 from app.models.disease_model import DiseaseModel
+from app.utils.file_manager import FileManager
+from app.utils.validators import ImageValidator
 from app.schemas.disease import (
     DiseasePrediction,
     DiseaseResponse
@@ -13,14 +15,28 @@ class DiseaseService:
             model_path="yolov8n.pt"
         )
 
-    def predict(self, image_path):
+    async def analyze(self, file):
+        extension = await ImageValidator.validate(file)
 
-        predictions = self.model.predict(image_path)
+        path = FileManager.save_upload(
+                file,
+                extension,
+            )
 
-        return DiseaseResponse(
-            success=True,
-            predictions=[
-                DiseasePrediction(**p)
-                for p in predictions
-            ]
-        )
+        try:
+
+            predictions = self.model.predict(str(path))
+
+            return DiseaseResponse(
+                        success=True,
+                        predictions=[
+                            DiseasePrediction(**p)
+                            for p in predictions
+                        ]
+                    )
+
+        finally:
+
+                FileManager.delete(path)
+
+    
