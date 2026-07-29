@@ -5,18 +5,19 @@ from app.schemas.disease import (
     DiseasePrediction,
     DiseaseResponse
 )
-
+from app.core.registry import model_registry
 
 class DiseaseService:
 
     def __init__(self):
 
-        self.model = DiseaseModel(
-            model_path="yolov8n.pt"
+        self.model = model_registry.get(
+            "disease"
         )
 
     async def analyze(self, file):
         extension = await ImageValidator.validate(file)
+        
 
         path = FileManager.save_upload(
                 file,

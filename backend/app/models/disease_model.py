@@ -5,23 +5,33 @@ from ultralytics import YOLO
 from app.exceptions.disease import (
     ModelNotLoadedException,
 )
-
+from app.core.logger import logger
 
 class DiseaseModel:
 
-    def __init__(self, model_path):
+    def __init__(self, model_path: str):
 
-        path = Path(model_path)
+        self.model_path = Path(model_path)
 
-        if not path.exists():
+        logger.info(
+            f"Loading Disease Model: {self.model_path}"
+        )
 
-            raise ModelNotLoadedException(
-                f"{model_path} not found."
-            )
+        self.model = YOLO(
+            self.model_path
+        )
 
-        self.model = YOLO(path)
+        logger.success(
+            "Disease model ready."
+        )
+        
 
     def predict(self, image_path: str):
+
+        logger.info(
+            f"Running inference: {image_path}"
+        )
+
 
         results = self.model.predict(
             source=image_path,
