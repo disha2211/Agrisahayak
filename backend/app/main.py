@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.routes.health import router as health_router
+from app.api.routes.disease import router as disease_router
 from app.core.config import settings
 from app.core.logger import logger
 
@@ -21,3 +22,4 @@ app = FastAPI(
 )
 
 app.include_router(health_router)
+app.include_router(disease_router)
