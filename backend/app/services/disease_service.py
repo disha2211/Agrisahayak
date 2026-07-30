@@ -6,6 +6,7 @@ from app.schemas.disease import (
     DiseaseResponse
 )
 from app.core.registry import model_registry
+from app.agents.disease_agent import DiseaseAgent
 
 class DiseaseService:
 
@@ -14,6 +15,8 @@ class DiseaseService:
         self.model = model_registry.get(
             "disease"
         )
+
+        self.agent = DiseaseAgent()
 
     async def analyze(self, file):
         extension = await ImageValidator.validate(file)
@@ -28,13 +31,14 @@ class DiseaseService:
 
             predictions = self.model.predict(str(path))
 
-            return DiseaseResponse(
-                        success=True,
-                        predictions=[
-                            DiseasePrediction(**p)
-                            for p in predictions
-                        ]
-                    )
+            if not predictions:
+                 return {
+                        "success": False,
+                        "message": "No disease detected."
+                    }
+            analysis = self.agent.analyze(predictions[0])
+
+            return analysis
 
         finally:
 
