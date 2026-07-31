@@ -1,5 +1,5 @@
 from pathlib import Path
-from bs4 import BeautifulSoup
+
 from markdownify import markdownify as md
 
 from .config import *
@@ -12,34 +12,27 @@ class MarkdownBuilder:
 
         self.logger = get_logger()
 
-    # ---------------------------------------------------
-    # Metadata
-    # ---------------------------------------------------
+        self.sections = []
 
-    def build_metadata(self,
-                       crop,
-                       source,
-                       url):
+    # ----------------------------------------------------
 
-        metadata = f"""---
+    def metadata(self,
+                 crop,
+                 source):
+
+        return f"""---
 title: {crop.title()}
 crop: {crop.title()}
 source: {source}
-source_url: {url}
 category: Crop Production
 language: English
 ---
 
 """
 
-        return metadata
+    # ----------------------------------------------------
 
-    # ---------------------------------------------------
-    # HTML -> Markdown
-    # ---------------------------------------------------
-
-    def html_to_markdown(self,
-                         soup: BeautifulSoup):
+    def soup_to_markdown(self, soup):
 
         markdown = md(
 
@@ -55,16 +48,14 @@ language: English
 
         return markdown
 
-    # ---------------------------------------------------
-    # Cleanup Markdown
-    # ---------------------------------------------------
+    # ----------------------------------------------------
 
-    def clean_markdown(self,
-                       markdown):
+    def clean(self,
+              markdown):
 
         lines = []
 
-        previous_blank = False
+        blank = False
 
         for line in markdown.splitlines():
 
@@ -72,78 +63,80 @@ language: English
 
             if line == "":
 
-                if previous_blank:
+                if blank:
                     continue
 
-                previous_blank = True
+                blank = True
 
             else:
 
-                previous_blank = False
+                blank = False
 
             lines.append(line)
 
         return "\n".join(lines)
 
-    # ---------------------------------------------------
-    # Save
-    # ---------------------------------------------------
+    # ----------------------------------------------------
 
-    def save_markdown(self,
-                      crop,
-                      markdown):
+    def add_section(self,
+                    soup):
 
-        output_dir = KNOWLEDGE_BASE_DIR / "crops"
+        markdown = self.soup_to_markdown(soup)
 
-        output_dir.mkdir(
-            parents=True,
-            exist_ok=True
+        markdown = self.clean(markdown)
+
+        if markdown.strip():
+
+            self.sections.append(markdown)
+
+    # ----------------------------------------------------
+
+    def merge(self):
+
+        return "\n\n---\n\n".join(self.sections)
+
+    # ----------------------------------------------------
+
+    def save(self,
+             crop,
+             source):
+
+        output = self.metadata(
+
+            crop,
+
+            source
+
         )
 
-        filepath = output_dir / f"{crop}.md"
+        output += self.merge()
+
+        folder = KNOWLEDGE_BASE_DIR / "crops"
+
+        folder.mkdir(
+
+            parents=True,
+
+            exist_ok=True
+
+        )
+
+        filepath = folder / f"{crop}.md"
 
         with open(
+
             filepath,
+
             "w",
+
             encoding="utf-8"
+
         ) as f:
 
-            f.write(markdown)
+            f.write(output)
 
         self.logger.info(
-            f"Markdown saved -> {filepath}"
-        )
 
-    # ---------------------------------------------------
-    # Build
-    # ---------------------------------------------------
-
-    def build(self,
-              crop,
-              soup,
-              source,
-              url):
-
-        metadata = self.build_metadata(
-
-            crop,
-            source,
-            url
+            f"Saved {filepath}"
 
         )
-
-        markdown = self.html_to_markdown(soup)
-
-        markdown = self.clean_markdown(markdown)
-
-        final = metadata + markdown
-
-        self.save_markdown(
-
-            crop,
-
-            final
-
-        )
-
-        return final
