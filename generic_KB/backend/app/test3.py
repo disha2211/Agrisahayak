@@ -1,13 +1,17 @@
 from pathlib import Path
 
 from knowledge_pipeline.parser import HTMLParser
+from knowledge_pipeline.cleaner import HTMLCleaner
 
 parser = HTMLParser()
+cleaner = HTMLCleaner()
 
 file = Path(
-    "app/raw_html/tomato/crop_prot_crop diseases_veg_tomato.html"
+    "app/raw_html/tomato/horti_min_nutri_veg_tomato.html"
 )
 
-content = parser.parse(file)
+soup = parser.parse(file)
 
-print(content.get_text()[:1000])
+clean = cleaner.clean(soup)
+
+print(clean.get_text("\n"))
