@@ -1,3 +1,7 @@
+import json
+
+from pathlib import Path
+
 from app.rag.loader import DocumentLoader
 
 from app.rag.cleaner import TextCleaner
@@ -50,5 +54,14 @@ class KnowledgePipeline:
                     chunks
 
             })
+
+        output_dir = Path("knowledge_base/processed")
+
+        output_dir.mkdir(parents=True,exist_ok=True)
+        
+        for doc in processed:
+            output_file = (output_dir/ f"{Path(doc['filename']).stem}.json")
+            with open(output_file,"w",encoding="utf-8",) as f:
+                json.dump(doc,f,indent=4,ensure_ascii=False,)
 
         return processed
