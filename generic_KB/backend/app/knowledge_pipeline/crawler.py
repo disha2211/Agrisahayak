@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 import time
@@ -36,37 +37,62 @@ class TNAUCrawler:
     # Discover Links
     # ---------------------------------------------------
 
-    def discover_links(self, index_url: str):
+    def discover_links(self, crop: str, index_url: str):
 
         html = self.fetch_html(index_url)
 
         soup = BeautifulSoup(html, "lxml")
 
-        discovered = set()
-
         base = "{0.scheme}://{0.netloc}".format(
             urlparse(index_url)
         )
 
+        discovered = set()
+
+        crop = crop.lower()
+
+        blacklist = {
+
+            "home",
+            "contact",
+            "photo bank",
+            "feedback",
+            "copyright",
+            "nursery techniques",
+            "deficiencies & disorders"
+
+        }
+
         for tag in soup.find_all("a", href=True):
 
+            text = tag.get_text(
+                " ",
+                strip=True
+            ).lower()
+
             href = tag["href"].strip()
+
+            if text in blacklist:
+                continue
 
             if href.startswith("#"):
                 continue
 
-            if href.startswith("mailto:"):
+            if href.startswith("mailto"):
                 continue
 
-            full_url = urljoin(base, href)
+            full = urljoin(base, href)
 
-            if "agritech.tnau.ac.in" not in full_url:
+            if "agritech.tnau.ac.in" not in full:
                 continue
 
-            discovered.add(full_url)
+            if crop not in full.lower() and crop not in text:
+                continue
+
+            discovered.add(full)
 
         self.logger.info(
-            f"Found {len(discovered)} links."
+            f"Discovered {len(discovered)} crop pages."
         )
 
         return sorted(discovered)
@@ -100,6 +126,14 @@ class TNAUCrawler:
 
         filepath = crop_dir / f"{filename}.html"
 
+        if filepath.exists():
+
+            self.logger.info(
+                f"Skipped existing : {filepath.name}"
+            )
+
+            return
+
         with open(
             filepath,
             "w",
@@ -126,13 +160,19 @@ class TNAUCrawler:
 
         index_url = CROP_URLS[crop]
 
-        links = self.discover_links(index_url)
+        links = self.discover_links(
+                crop,
+                index_url
+            )
 
         self.logger.info(
             f"Downloading {len(links)} pages..."
         )
 
-        for url in links:
+        for url in tqdm(
+                links,
+                desc=f"Crawling {crop}"
+            ):
 
             try:
 
@@ -152,8 +192,9 @@ class TNAUCrawler:
                     f"Skipped {url}"
                 )
 
-                self.logger.warning(e)
+                self.logger.exception(e)
 
         self.logger.info(
             "Crawling Complete."
         )
+

@@ -22,8 +22,6 @@ language: English
 | TNAU Agritech Portal :: Crop Protection    |  | | --- | | Crop: Tomato | | **Scientific name:** ****Lycopersicon esculantum**** | | **Family:** [**Solanaceae**](http://en.wikipedia.org/wiki/Euphorbiaceae "Euphorbiaceae") |  ---  |  |  |  |  | | --- | --- | --- | --- | | [**Fruit Borer**](tomato/tomato_1.html) | [**Serpentine leaf miner**](tomato/tomato_2.html) | [**Leaf eating caterpillar**](tomato/tomato_3.html) | [**Whitefly**](tomato/tomato_4.html) |  |  |  |  |  | | --- | --- | --- | --- | | [**Thrips**](tomato/tomato_5.html) | [**Striped mealybug**](tomato/tomato_6.html) | [**Red spider mite**](tomato/tomato_7.html) | [**Pinworm**](tomato/tomato_8.html) |  |  |  | | --- | --- | | **Source** : [***sites.aces.edu***](http://sites.aces.edu/) [, ***www.colostate.edu***](http://www.colostate.edu/) [,  ***www.dpi.qld.gov.au***](http://www.dpi.qld.gov.au/) | **Updated on Jun, 2023** | | | |
 | ---   | | | | | | [Disclaimer](http://agritech.tnau.ac.in/disclaimer_en.html) | [Contact Us](http://agritech.tnau.ac.in/contact.html "Contact Us") Â© TNAU 2008 - 2024 All Rights Reserved. | | |
 
----
-
 |  |
 | --- |
 | | | [Nursery Techniques](horti_nursery techniques.html) | [Deficiencies & Disorders](horti_deficienciesanddisorders.html) | [Fertilizer Schedule](horti_fertilizer schedule.html) | [Plant Protection](horti_plantprotection.html) | | | |
@@ -32,8 +30,6 @@ language: English
 | | | | | | | |
 | © TNAU 2008 - 2024 All Rights Reserved. |
 
----
-
 |  |  |
 | --- | --- |
 | | | [Nursery Techniques](horti_nursery techniques.html) | [Deficiencies & Disorders](horti_deficienciesanddisorders.html) | [Fertilizer Schedule](horti_fertilizer schedule.html) | [Plant Protection](horti_plantprotection.html) | | | | |
@@ -41,8 +37,6 @@ language: English
 | **Tomato (*Solanum lycopersicum* )**  **Solanaceae**   |  |  |  |  | | --- | --- | --- | --- | | |  | | --- | | **Root-knot nematode, Meloidogyne incognita**     Root knot nematode, Meloidogyne incognita is a obligate, sedentary endoparasites. M. incognita is one of the major constraints in the production of tomato in tropical and subtropical regions. It causes 11  35% yield loss in tomato. Root knot remains a serious issue in both nursery and field conditions.  **Mode of spread**  Seedlings or planting materials, irrigation water and farm implements.  **Symptoms**  **Above ground symptoms**   - Infested seedlings may not survive after transplanting. - Stunted growth of the plants. - Disease appearance in patches under field conditions. - Leaves show chlorosis and yellowing. - Growth may be retarded. - Plants show Day wilting symptom.   **Below ground symptoms**   - Primary galls are small and induced by swelling which coalesce to form larger secondary gall s/ knots on the root. - Root system is reduced to a severely galled and a completely disorganized vascular system. - Sometimes the galled tissues are invaded by secondary pathogens and results in root wilting.   **Root knot galls on tomato** | | **Management**   - Raised of seedlings in nematode free soil and use of nematode free planting materials. - Nursery application of Glomus fasciculatum@ 100g/m2. - Soil solarization in nursery beds with white or transparent sheet LLDPE 25 gauge thickness during summer. - Removal and destruction of nematode affected roots of previous crop. - Summer ploughing of field. - Crop rotation with non-host crops like mustard, sesame, maize, wheat and millets. - Intercroping with marigold @ 4:1 ratio. - Soil application of talc based formulation of Purpureocillium lilacinum @ 2.5 kg/ ha along with 250kg of FYM. - Soil application of carbofuran 3G @ 1 kg a.i./ha (33 kg/ha).                                                                       **Stunted and yellowing of tomato plant** | | | | |
  **Updated on Jan, 2023** || | | | | | | | |
 | © TNAU 2008 - 2024 All Rights Reserved. | |
-
----
 
 |  |
 | --- |

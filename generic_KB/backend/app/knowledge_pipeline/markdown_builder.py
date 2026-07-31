@@ -96,47 +96,27 @@ language: English
         return "\n\n---\n\n".join(self.sections)
 
     # ----------------------------------------------------
-
-    def save(self,
-             crop,
-             source):
-
-        output = self.metadata(
-
-            crop,
-
-            source
-
-        )
-
-        output += self.merge()
+    def save(self, crop, content):
 
         folder = KNOWLEDGE_BASE_DIR / "crops"
 
         folder.mkdir(
-
             parents=True,
-
             exist_ok=True
-
         )
 
         filepath = folder / f"{crop}.md"
 
         with open(
-
             filepath,
-
             "w",
-
             encoding="utf-8"
-
         ) as f:
 
-            f.write(output)
+            f.write(content)
 
         self.logger.info(
-
             f"Saved {filepath}"
-
         )
+
+        return filepath

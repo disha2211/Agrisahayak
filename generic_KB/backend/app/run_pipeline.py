@@ -8,6 +8,7 @@ from knowledge_pipeline.cleaner import HTMLCleaner
 
 from knowledge_pipeline.markdown_builder import MarkdownBuilder
 
+from knowledge_pipeline.normalizer import MarkdownNormalizer
 
 class Pipeline:
 
@@ -42,14 +43,13 @@ class Pipeline:
 
             self.builder.add_section(soup)
 
-        self.builder.save(
-
-            crop,
-
-            source="TNAU"
-
-        )
-
+        normalizer = MarkdownNormalizer()
+        markdown = self.builder.merge()
+        markdown = normalizer.normalize(markdown)
+        metadata = self.builder.metadata(crop,"TNAU")
+        output = metadata + markdown
+        folder = self.builder.save(crop,output)
+        
         print("\nKnowledge base generated successfully.")
 
 
