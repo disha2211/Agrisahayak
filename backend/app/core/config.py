@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str
     WHISPER_MODEL: str
     LLM_MODEL: str
+    OLLAMA_HOST: str
     
 
     model_config = SettingsConfigDict(

@@ -21,6 +21,9 @@ from app.tools.rag_tool import (
     KnowledgeRetrievalTool,
 )
 
+from app.services.llm_service import LLMService
+from app.api.routes.chat import router as chat_router
+
 
 
 @asynccontextmanager
@@ -39,6 +42,11 @@ async def lifespan(app: FastAPI):
     tool_registry.register(
     KnowledgeRetrievalTool()
 )
+
+    service_registry.register(
+    "llm",
+    LLMService(),
+)
     logger.success("All AI models loaded.")
     
     yield
@@ -54,3 +62,4 @@ app = FastAPI(
 
 app.include_router(health_router)
 app.include_router(disease_router)
+app.include_router(chat_router)

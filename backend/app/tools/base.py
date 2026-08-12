@@ -16,3 +16,7 @@ class BaseTool(ABC):
         Execute the tool.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def schema(self) -> dict:
+        raise NotImplementedError

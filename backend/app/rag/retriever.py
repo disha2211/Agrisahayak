@@ -20,13 +20,14 @@ class Retriever:
 
         query,
 
-        k=5,
+        k=10,
 
     ):
 
         embedding = self.embedding.embed(
             query
         )
+        k = int(k)
 
         results = self.db.collection.query(
 
