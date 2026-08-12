@@ -1,6 +1,5 @@
 from app.core.registry import model_registry
-
-from app.rag.vector_store import VectorStore
+from app.core.services import service_registry
 
 
 class Retriever:
@@ -11,7 +10,9 @@ class Retriever:
             "embedding"
         )
 
-        self.db = VectorStore()
+        self.db = service_registry.get(
+            "vector_store"
+        )
 
     def retrieve(
 

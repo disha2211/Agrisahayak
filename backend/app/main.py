@@ -8,6 +8,18 @@ from app.api.routes.disease import router as disease_router
 from app.core.config import settings
 from app.core.logger import logger
 from app.core.registry import model_registry
+from app.core.services import service_registry
+from app.rag.vector_store import VectorStore
+
+from app.core.tools import tool_registry
+
+from app.tools.disease_tool import (
+    DiseaseDetectionTool,
+)
+
+from app.tools.rag_tool import (
+    KnowledgeRetrievalTool,
+)
 
 
 
@@ -15,8 +27,20 @@ from app.core.registry import model_registry
 async def lifespan(app: FastAPI):
     logger.info("Starting AgriSahayak AI Backend...")
     model_registry.load_models()
-    logger.success("All AI models loaded.")
+    service_registry.register(
+    "vector_store",
+    VectorStore(),
+)
 
+    tool_registry.register(
+    DiseaseDetectionTool()
+)
+
+    tool_registry.register(
+    KnowledgeRetrievalTool()
+)
+    logger.success("All AI models loaded.")
+    
     yield
     
     logger.info("Shutting down AgriSahayak AI Backend...")
