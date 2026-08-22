@@ -1,366 +1,641 @@
 # 🌾 AgriSahayak AI
 
-**AI-Powered Agricultural Disease Detection and Knowledge Assistant**
+### Agentic AI-Powered Agricultural Assistant
 
-AgriSahayak AI is an AI-driven agriculture assistance platform designed to help farmers identify crop diseases from plant images and support diagnosis with trusted agricultural knowledge.
+AgriSahayak AI is an **agentic agricultural intelligence platform** that combines computer vision, Retrieval-Augmented Generation (RAG), large language models, and domain-specific tools to assist farmers with crop disease identification and agricultural queries.
 
-The system combines **computer vision, domain-specific knowledge, semantic search, and an agent-based decision layer** into a modular backend architecture.
+Instead of treating disease detection and knowledge retrieval as isolated features, AgriSahayak uses an **LLM-powered Farmer Agent** that dynamically decides when to use specialized tools.
+
+The system currently combines:
+
+- 🌱 **Plant disease detection using YOLO**
+- 🤖 **LLM-powered agricultural assistant**
+- 🧠 **Agentic tool calling**
+- 📚 **Retrieval-Augmented Generation (RAG)**
+- 🔎 **Semantic agricultural knowledge retrieval**
+- 🗃️ **Persistent ChromaDB vector store**
+- 🧩 **Modular tool registry**
+- ⚙️ **Service and model registries**
+- 🦙 **Local LLM inference through Ollama**
+- ⚡ **FastAPI backend**
+- 📄 **Agricultural PDF knowledge base**
+- 🕷️ **TNAU agricultural knowledge extraction pipeline**
 
 ---
 
-## 🚀 Overview
+# 🚀 What Makes AgriSahayak Different?
 
-Farmers often face difficulty identifying crop diseases and determining appropriate actions quickly. AgriSahayak AI addresses this by combining image-based disease detection with a retrieval-based agricultural knowledge system.
+Traditional agricultural applications typically follow a fixed pipeline:
 
-The current backend provides:
+```text
+User
+ ↓
+Disease Model
+ ↓
+Prediction
+```
 
-- 🌱 Crop disease detection from plant images
-- 🧠 AI-based disease analysis
-- 📚 Agricultural knowledge retrieval using RAG
-- 🔎 Semantic search over agricultural documents
-- 🗃️ Persistent ChromaDB vector storage
-- 📄 PDF-based agricultural knowledge ingestion
-- 🕷️ Web-based agricultural knowledge extraction pipeline
-- 🧩 Modular model registry
-- ⚡ FastAPI REST API
-- 🛡️ Image validation and temporary file management
-- 📊 Health and service-status endpoints
-- 📝 Structured logging
+AgriSahayak is being designed around an **agentic workflow**:
 
-The architecture is designed so that additional capabilities such as **weather intelligence, LLM-based recommendations, voice interaction, and additional crop/disease models** can be integrated without redesigning the core system.
+```text
+                         ┌──────────────────┐
+                         │      Farmer      │
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                         ┌──────────────────┐
+                         │   Farmer Agent   │
+                         │      (LLM)       │
+                         └────────┬─────────┘
+                                  │
+                     ┌────────────┼────────────┐
+                     │            │            │
+                     ▼            ▼            ▼
+              Disease Tool   Knowledge Tool   Future Tools
+                     │            │
+                     ▼            ▼
+                  YOLO         ChromaDB
+                     │            │
+                     └─────┬──────┘
+                           ▼
+                    Tool Results
+                           │
+                           ▼
+                         LLM
+                           │
+                           ▼
+                   Farmer-Friendly
+                       Response
+```
+
+The LLM acts as the **reasoning and orchestration layer**, while specialized tools provide reliable capabilities.
 
 ---
 
 # ✨ Features
 
-## 1. Plant Disease Detection
+## 1. 🤖 Agentic Agricultural Assistant
 
-Users can upload a plant image through the FastAPI API.
+The `/chat` endpoint provides the primary conversational interface.
 
-The system:
+```http
+POST /chat
+```
 
-1. Validates the uploaded image.
-2. Stores it temporarily.
-3. Passes it to the disease detection model.
-4. Extracts detected disease classes and confidence scores.
-5. Sends the prediction to the disease analysis agent.
-6. Returns structured disease information.
-7. Deletes the temporary image.
+The user sends a natural-language agricultural question:
 
-Currently, the disease model is implemented using **Ultralytics YOLO**.
+```json
+{
+  "message": "What disease is affecting my tomato plant?"
+}
+```
 
-Supported image formats:
+The `FarmerAgent` sends the request to the configured LLM and exposes the available agricultural tools.
 
-- `.jpg`
-- `.jpeg`
-- `.png`
+The LLM can decide whether it needs to invoke:
 
-Maximum upload size:
+- Disease Detection
+- Agricultural Knowledge Retrieval
 
-- **10 MB**
+The agent then executes the selected tools and feeds their results back into the LLM.
 
 ---
 
-## 2. Disease Analysis Agent
+# 2. 🧠 LLM Tool Calling
 
-The `DiseaseAgent` provides a domain-specific interpretation layer on top of raw model predictions.
+The latest architecture introduces an explicit tool-calling system.
 
-Instead of returning only:
+The LLM does not directly execute application functionality.
+
+Instead:
 
 ```text
-Disease = Tomato___Late_Blight
-Confidence = 0.91
+LLM
+ ↓
+Tool Call
+ ↓
+Tool Registry
+ ↓
+Tool
+ ↓
+Tool Result
+ ↓
+LLM
 ```
 
-the agent maps the prediction to agricultural domain information such as:
+This creates a controlled boundary between the language model and application capabilities.
+
+The current implementation uses **Ollama** for local LLM inference.
+
+---
+
+# 3. 🛠️ Tool Architecture
+
+Every AI capability exposed to the agent implements a common interface:
+
+```python
+class BaseTool:
+    run(...)
+    schema(...)
+```
+
+This allows tools to be dynamically registered and exposed to the LLM.
+
+Current tools include:
+
+### Disease Detection Tool
+
+```text
+disease_detection
+```
+
+Purpose:
+
+> Analyze a plant image and detect possible plant diseases with confidence scores.
+
+Internally it uses the registered disease model.
+
+---
+
+### Knowledge Retrieval Tool
+
+```text
+knowledge_retrieval
+```
+
+Purpose:
+
+> Search the agricultural knowledge base for relevant information about crops, diseases, treatments, cultivation practices, and agricultural recommendations.
+
+Internally it uses the RAG retriever and ChromaDB.
+
+---
+
+# 4. 🧩 Tool Registry
+
+Tools are managed through a centralized:
+
+```text
+ToolRegistry
+```
+
+Tools are registered during application startup:
+
+```text
+ToolRegistry
+ ├── disease_detection
+ └── knowledge_retrieval
+```
+
+The Farmer Agent dynamically retrieves:
+
+```python
+tool.schema()
+```
+
+for every registered tool.
+
+This means adding a new capability does not require rewriting the agent.
+
+A future tool could therefore be introduced as:
+
+```text
+WeatherTool
+MarketPriceTool
+CropRecommendationTool
+GovernmentSchemeTool
+```
+
+without changing the fundamental agent architecture.
+
+---
+
+# 5. 🌱 Plant Disease Detection
+
+AgriSahayak integrates an Ultralytics YOLO-based disease detection model.
+
+The model can analyze uploaded plant images and return predictions containing:
+
+- disease class
+- confidence score
+
+The disease service then passes the prediction to `DiseaseAgent`.
+
+The current flow is:
+
+```text
+Plant Image
+     ↓
+Image Validation
+     ↓
+Temporary File
+     ↓
+YOLO Model
+     ↓
+Disease Prediction
+     ↓
+Disease Agent
+     ↓
+Structured Analysis
+```
+
+---
+
+# 6. 🧠 Disease Analysis Agent
+
+The `DiseaseAgent` provides a domain-specific interpretation layer over the raw YOLO prediction.
+
+It maps disease classes to agricultural information including:
 
 - Crop
 - Disease
 - Confidence
 - Severity
 - Recommended action
-- Whether weather information may be required
-- Whether RAG retrieval may be required
+- Weather requirement
+- RAG requirement
 
-Example:
+This creates a separation between:
 
-```json
-{
-  "crop": "Tomato",
-  "disease": "Tomato___Late_Blight",
-  "confidence": 0.91,
-  "severity": "High",
-  "recommended_action": "Spray fungicide immediately.",
-  "needs_weather": true,
-  "needs_rag": true
-}
+```text
+Disease Model
+"What was detected?"
 ```
 
-This creates a separation between **model prediction** and **agricultural reasoning**.
+and:
+
+```text
+Disease Agent
+"What does the detection mean?"
+```
 
 ---
 
-# 📚 Retrieval-Augmented Generation Knowledge System
+# 7. 📚 Retrieval-Augmented Generation
 
-AgriSahayak contains a domain-specific RAG foundation for agricultural information.
+AgriSahayak contains a domain-specific agricultural knowledge system.
 
-The current knowledge base includes the:
+The current primary knowledge source is:
 
 **Agriculture Crop Production Guide (Agriculture-CPG-2020)**
 
-The RAG pipeline consists of:
+The RAG architecture is:
 
 ```text
-PDF Documents
-      ↓
+Agricultural Documents
+        ↓
 Document Loader
-      ↓
-Text Cleaning
-      ↓
-Text Chunking
-      ↓
-Embedding Generation
-      ↓
+        ↓
+Text Cleaner
+        ↓
+Text Chunker
+        ↓
+Embedding Model
+        ↓
 ChromaDB
-      ↓
+        ↓
 Semantic Retrieval
 ```
 
 ---
 
-## 3. Document Ingestion
+# 8. 🔎 Semantic Knowledge Retrieval
 
-PDF documents are loaded using PyMuPDF.
+The `KnowledgeRetrievalTool` exposes the RAG system to the Farmer Agent.
 
-The `DocumentLoader`:
-
-- scans the knowledge-base directory
-- opens PDF documents
-- extracts text page-by-page
-- associates extracted text with the source filename
-
----
-
-## 4. Text Cleaning
-
-Extracted PDF text is normalized before indexing.
-
-The cleaner:
-
-- removes newline fragmentation
-- normalizes whitespace
-- produces cleaner text for downstream chunking
-
----
-
-## 5. Text Chunking
-
-Documents are divided into overlapping chunks.
-
-Current configuration:
+A query such as:
 
 ```text
-Chunk size: 500 characters
-Overlap:    100 characters
+How do I control tomato leaf curl disease?
 ```
 
-The overlap helps preserve contextual continuity between neighboring chunks.
+can be converted into an embedding and searched against the agricultural knowledge base.
 
----
+The retriever returns:
 
-## 6. Semantic Embeddings
+- relevant documents
+- document metadata
+- source information
 
-The system uses **Sentence Transformers** to convert agricultural text into vector representations.
-
-Embeddings are normalized before storage, allowing efficient semantic similarity retrieval.
-
-Batch embedding is also supported for more efficient knowledge-base construction.
-
----
-
-## 7. ChromaDB Vector Store
-
-AgriSahayak uses **ChromaDB** as its persistent vector database.
-
-Each stored chunk contains:
-
-- unique chunk ID
-- source filename
-- chunk index
-- original chunk text
-- embedding vector
-
-This allows agricultural information to be retrieved based on semantic similarity rather than simple keyword matching.
-
----
-
-## 8. Semantic Retriever
-
-The `Retriever` converts a user query into an embedding and queries ChromaDB for the most relevant knowledge chunks.
-
-Example query:
+The current tool supports configurable retrieval size:
 
 ```text
-Tomato leaf curl disease
-```
-
-The retriever returns the most semantically relevant agricultural information.
-
-The default retrieval size is:
-
-```text
-k = 5
+k = 10
 ```
 
 ---
 
-# 🕷️ Generic Agricultural Knowledge Pipeline
+# 9. 🗃️ ChromaDB Vector Store
 
-The repository also contains a separate experimental/general-purpose knowledge ingestion pipeline under:
+AgriSahayak uses **ChromaDB** as a persistent vector database.
+
+The vector store maintains:
+
+- document chunks
+- embeddings
+- source filenames
+- chunk metadata
+
+The collection is:
+
+```text
+agrisahayak
+```
+
+The vector database is persisted under:
+
+```text
+backend/knowledge_base/chroma/
+```
+
+This allows the expensive embedding/indexing process to be performed separately from runtime retrieval.
+
+---
+
+# 10. 📄 Agricultural Knowledge Pipeline
+
+The PDF ingestion pipeline processes agricultural documents through several stages.
+
+```text
+PDF
+ ↓
+DocumentLoader
+ ↓
+TextCleaner
+ ↓
+TextChunker
+ ↓
+JSON Processing
+ ↓
+EmbeddingService
+ ↓
+ChromaDB
+```
+
+The current knowledge source includes:
+
+```text
+Agriculture-CPG-2020.pdf
+```
+
+Processed output is stored under:
+
+```text
+knowledge_base/processed/
+```
+
+---
+
+# 11. 🕷️ Generic Agricultural Knowledge Pipeline
+
+The repository also contains a separate experimental knowledge-engineering pipeline under:
 
 ```text
 generic_KB/
 ```
 
-This pipeline was designed to collect crop information from the **Tamil Nadu Agricultural University (TNAU)** agricultural website and transform it into structured Markdown knowledge bases.
+This pipeline extracts agricultural information from the **Tamil Nadu Agricultural University (TNAU)** website.
 
-The pipeline follows:
+Its architecture is:
 
 ```text
 TNAU Website
      ↓
 Crawler
      ↓
-Raw HTML
-     ↓
 HTML Parser
      ↓
-HTML Cleaner
+Content Cleaner
      ↓
 Markdown Builder
      ↓
-Markdown Normalizer
+Normalizer
      ↓
 Crop Knowledge Base
 ```
 
----
-
-## 9. Web Crawler
-
-The `TNAUCrawler`:
-
-- downloads agricultural webpages
-- discovers crop-specific links
-- restricts crawling to the TNAU domain
-- skips irrelevant navigation pages
-- retries failed HTTP requests
-- introduces request delays
-- stores raw HTML locally
-
-Configured crop targets include:
-
-- Tomato
-- Potato
-- Cotton
-- Rice
+The pipeline supports crop-specific knowledge extraction and currently contains generated knowledge for crops such as tomato.
 
 ---
 
-## 10. HTML Parsing and Cleaning
+# 🏗️ System Architecture
 
-The knowledge pipeline removes web-specific noise such as:
-
-- navigation
-- headers
-- footers
-- scripts
-- styles
-- breadcrumbs
-- duplicate links
-- comments
-- irrelevant text
-- empty HTML elements
-
-The parser attempts to identify the largest meaningful content region from each page.
-
----
-
-## 11. Markdown Knowledge Base Generation
-
-Cleaned agricultural webpages are converted into Markdown.
-
-Generated documents include metadata such as:
-
-```yaml
----
-title: Tomato
-crop: Tomato
-source: TNAU
-category: Crop Production
-language: English
----
-```
-
-Multiple pages belonging to a crop can be merged into a unified crop knowledge document.
-
----
-
-## 12. Knowledge Normalization
-
-The Markdown normalization stage removes or reduces:
-
-- duplicate paragraphs
-- duplicate headings
-- excessive blank lines
-- repeated separators
-- irrelevant navigation words
-
-This was intended to make web-extracted agricultural information more suitable for downstream knowledge retrieval.
-
----
-
-# 🏗️ Architecture
-
-AgriSahayak follows a modular layered architecture.
+The latest architecture can be represented as:
 
 ```text
-                    ┌───────────────────────┐
-                    │       Client          │
-                    │ Web / Mobile / UI     │
-                    └───────────┬───────────┘
-                                │
-                                ▼
-                    ┌───────────────────────┐
-                    │       FastAPI         │
-                    │    API Layer          │
-                    └───────────┬───────────┘
-                                │
-                    ┌───────────▼───────────┐
-                    │       Services         │
-                    │ DiseaseService         │
-                    │ HealthService          │
-                    └───────┬─────────┬─────┘
-                            │         │
-                ┌───────────▼───┐ ┌──▼──────────────┐
-                │ Disease Model │ │ Disease Agent  │
-                │    YOLO       │ │ Domain Logic   │
-                └───────────────┘ └───────┬────────┘
-                                          │
-                                  ┌───────▼────────┐
-                                  │      RAG       │
-                                  │                │
-                                  │ Retriever      │
-                                  │ Embeddings     │
-                                  │ Vector Store   │
-                                  └───────┬────────┘
-                                          │
-                                  ┌───────▼────────┐
-                                  │    ChromaDB    │
-                                  │ Agricultural   │
-                                  │ Knowledge Base │
-                                  └────────────────┘
+                              ┌──────────────────────┐
+                              │        Farmer        │
+                              └──────────┬───────────┘
+                                         │
+                                         ▼
+                              ┌──────────────────────┐
+                              │      FastAPI API     │
+                              │                      │
+                              │  /chat               │
+                              │  /disease/predict    │
+                              │  /health             │
+                              └──────────┬───────────┘
+                                         │
+                                         ▼
+                              ┌──────────────────────┐
+                              │     FarmerAgent      │
+                              │                      │
+                              │ LLM + Tool Calling   │
+                              └──────────┬───────────┘
+                                         │
+                              ┌──────────┴──────────┐
+                              │                     │
+                              ▼                     ▼
+                    ┌──────────────────┐  ┌──────────────────┐
+                    │ Disease Detection│  │ Knowledge        │
+                    │ Tool             │  │ Retrieval Tool   │
+                    └────────┬─────────┘  └────────┬─────────┘
+                             │                     │
+                             ▼                     ▼
+                    ┌──────────────────┐  ┌──────────────────┐
+                    │   YOLO Model     │  │    Retriever     │
+                    └──────────────────┘  └────────┬─────────┘
+                                                   │
+                                                   ▼
+                                          ┌──────────────────┐
+                                          │    ChromaDB      │
+                                          │ Agricultural KB  │
+                                          └──────────────────┘
+
+                              ┌──────────────────────┐
+                              │     Ollama LLM       │
+                              │  Local Inference     │
+                              └──────────────────────┘
 ```
+
+---
+
+# 🔄 Agent Execution Flow
+
+The current Farmer Agent follows an iterative tool-calling loop.
+
+```text
+User Query
+    │
+    ▼
+FarmerAgent
+    │
+    ▼
+Ollama LLM
+    │
+    ├── No tool required
+    │       ↓
+    │   Final response
+    │
+    └── Tool required
+            │
+            ▼
+       Tool Selection
+            │
+            ▼
+       Tool Registry
+            │
+            ▼
+       Tool Execution
+            │
+            ▼
+        Tool Result
+            │
+            ▼
+       Ollama LLM
+            │
+            ├── Another tool required
+            │       ↓
+            │    Repeat
+            │
+            └── Final answer
+```
+
+This allows the agent to perform **multi-step reasoning through tools** instead of following a hard-coded sequence.
+
+---
+
+# 🧱 Architectural Components
+
+## API Layer
+
+Responsible for HTTP communication.
+
+```text
+app/api/
+```
+
+Current endpoints include:
+
+```text
+GET  /health
+GET  /disease/status
+POST /disease/predict
+POST /chat
+```
+
+---
+
+## Agent Layer
+
+```text
+app/agents/
+```
+
+Contains:
+
+- `FarmerAgent`
+- `DiseaseAgent`
+
+### FarmerAgent
+
+Responsible for:
+
+- interacting with the LLM
+- exposing tool schemas
+- processing tool calls
+- executing tools
+- returning the final response
+
+### DiseaseAgent
+
+Responsible for:
+
+- interpreting disease predictions
+- applying disease-specific domain rules
+
+---
+
+## Tool Layer
+
+```text
+app/tools/
+```
+
+Contains:
+
+- `BaseTool`
+- `DiseaseDetectionTool`
+- `KnowledgeRetrievalTool`
+
+This layer provides the controlled interface between the LLM and application capabilities.
+
+---
+
+## Service Layer
+
+```text
+app/services/
+```
+
+Contains:
+
+- `DiseaseService`
+- `HealthService`
+- `LLMService`
+
+`LLMService` abstracts Ollama communication away from the agent itself.
+
+---
+
+## Model Layer
+
+```text
+app/models/
+```
+
+Contains the computer-vision inference implementation.
+
+The model lifecycle is managed through:
+
+```text
+ModelRegistry
+```
+
+Current registered models:
+
+```text
+disease
+embedding
+```
+
+---
+
+## RAG Layer
+
+```text
+app/rag/
+```
+
+Contains:
+
+- Document Loader
+- Cleaner
+- Chunker
+- Embedding Service
+- Vector Store
+- Retriever
+- Knowledge Pipeline
 
 ---
 
@@ -372,12 +647,15 @@ Agrisahayak-ai/
 ├── backend/
 │   │
 │   ├── app/
+│   │   │
 │   │   ├── agents/
-│   │   │   └── disease_agent.py
+│   │   │   ├── disease_agent.py
+│   │   │   └── farmer_agent.py
 │   │   │
 │   │   ├── api/
 │   │   │   ├── dependencies.py
 │   │   │   └── routes/
+│   │   │       ├── chat.py
 │   │   │       ├── disease.py
 │   │   │       └── health.py
 │   │   │
@@ -386,7 +664,11 @@ Agrisahayak-ai/
 │   │   │   ├── constants.py
 │   │   │   ├── logger.py
 │   │   │   ├── model_registry.py
-│   │   │   └── registry.py
+│   │   │   ├── registry.py
+│   │   │   ├── services.py
+│   │   │   ├── service_registry.py
+│   │   │   ├── tools.py
+│   │   │   └── tool_registry.py
 │   │   │
 │   │   ├── exceptions/
 │   │   │   └── disease.py
@@ -405,43 +687,53 @@ Agrisahayak-ai/
 │   │   │
 │   │   ├── schemas/
 │   │   │   ├── agent.py
+│   │   │   ├── chat.py
 │   │   │   └── disease.py
 │   │   │
 │   │   ├── services/
 │   │   │   ├── disease_service.py
-│   │   │   └── health_service.py
+│   │   │   ├── health_service.py
+│   │   │   └── llm_service.py
+│   │   │
+│   │   ├── tools/
+│   │   │   ├── base.py
+│   │   │   ├── disease_tool.py
+│   │   │   └── rag_tool.py
 │   │   │
 │   │   └── utils/
 │   │       ├── file_manager.py
 │   │       └── validators.py
 │   │
 │   ├── knowledge_base/
-│   │   ├── raw/
+│   │   ├── chroma/
 │   │   ├── processed/
-│   │   └── chroma/
+│   │   └── raw/
 │   │
 │   ├── build_vector_db.py
 │   ├── test_pipeline.py
-│   └── test_retriever.py
+│   ├── test_retriever.py
+│   └── test_tools.py
 │
 ├── generic_KB/
 │   └── backend/
 │       └── app/
-│           ├── knowledge_pipeline/
-│           │   ├── crawler.py
-│           │   ├── parser.py
-│           │   ├── cleaner.py
-│           │   ├── markdown_builder.py
-│           │   ├── normalizer.py
-│           │   └── config.py
+│           ├── knowledge_base/
+│           │   └── crops/
 │           │
-│           └── knowledge_base/
-│               └── crops/
-│                   └── tomato.md
+│           └── knowledge_pipeline/
+│               ├── cleaner.py
+│               ├── config.py
+│               ├── crawler.py
+│               ├── markdown_builder.py
+│               ├── metadata.py
+│               ├── normalizer.py
+│               ├── parser.py
+│               └── utils.py
 │
 ├── data/
 │   └── sample images
 │
+├── README.md
 └── requirements.txt
 ```
 
@@ -449,396 +741,268 @@ Agrisahayak-ai/
 
 # 🧠 Architectural Decisions
 
-The repository's Git history shows that the architecture was developed incrementally rather than as a single monolithic implementation.
+## 1. Move from Fixed Pipelines to Agentic Orchestration
 
-Several important architectural decisions can be extracted from that evolution.
+The most important recent architectural decision is introducing the `FarmerAgent`.
 
-## 1. Layered Backend Architecture
-
-The project separates:
+Previously:
 
 ```text
 API
  ↓
-Service
+Specific Service
  ↓
-Model / Agent
- ↓
-Infrastructure
+Specific Model
 ```
 
-For example:
+The newer architecture introduces:
 
 ```text
-disease.py
-    ↓
-DiseaseService
-    ↓
-DiseaseModel
-    ↓
-YOLO
+API
+ ↓
+FarmerAgent
+ ↓
+LLM
+ ↓
+Tools
 ```
 
-This prevents API routes from directly containing model inference logic.
+The LLM can determine which capability is required for a query.
 
-**Decision:** Keep HTTP/API concerns separate from business logic and ML inference.
-
-**Benefit:** Individual components can be changed without rewriting the API layer.
+This is the foundation for making AgriSahayak a true **agentic AI system** rather than a collection of independent AI APIs.
 
 ---
 
-## 2. Model Registry
+# 2. Tool Calling Instead of Direct LLM Access
 
-Models are initialized through a centralized `ModelRegistry`.
+The LLM does not directly access the database or model.
+
+Instead, it receives structured tool schemas.
+
+```text
+LLM
+ ↓
+Tool Schema
+ ↓
+Tool Call
+ ↓
+Application Tool
+```
+
+This provides a controlled interface between probabilistic LLM reasoning and deterministic application functionality.
+
+---
+
+# 3. Local LLM Through Ollama
+
+The project currently uses Ollama as the LLM runtime.
+
+```text
+FarmerAgent
+     ↓
+LLMService
+     ↓
+Ollama Client
+     ↓
+Local LLM
+```
+
+This provides:
+
+- local inference
+- reduced dependency on external LLM APIs
+- control over the selected model
+- easier experimentation with different local models
+
+The model and Ollama host are configurable through environment variables.
+
+---
+
+# 4. Tool Registry for Extensibility
+
+Tools are registered independently from the Farmer Agent.
+
+```text
+ToolRegistry
+     │
+     ├── DiseaseDetectionTool
+     ├── KnowledgeRetrievalTool
+     │
+     └── Future tools
+```
+
+The Farmer Agent does not need to know the implementation details of individual tools.
+
+This makes the architecture extensible.
+
+---
+
+# 5. Service Registry
+
+A separate `ServiceRegistry` manages runtime services.
+
+Current services include:
+
+```text
+vector_store
+llm
+```
+
+This allows agents and tools to retrieve shared infrastructure without tightly coupling themselves to concrete implementations.
+
+---
+
+# 6. Model Registry
+
+ML models are loaded once during application startup.
 
 ```text
 ModelRegistry
- ├── disease model
- └── embedding model
+     │
+     ├── Disease Model
+     └── Embedding Model
 ```
 
-Models are loaded during FastAPI startup.
-
-**Decision:** Centralize model initialization and access.
-
-**Reason:** ML models are expensive to initialize and should not be recreated for every request.
-
-**Benefit:**
-
-- avoids repeated model loading
-- provides a single model lifecycle
-- makes future model additions easier
-- allows services to retrieve models by name
+This avoids repeatedly loading expensive models for individual requests.
 
 ---
 
-## 3. Dependency Injection
+# 7. Separate Agent Reasoning from Domain Logic
 
-FastAPI dependency injection is used for services:
+There are now two different reasoning responsibilities:
 
-```python
-get_disease_service()
-```
+### FarmerAgent
 
-and the dependency is cached using:
-
-```python
-@lru_cache
-```
-
-**Decision:** Reuse service instances rather than constructing them for every request.
-
-This works particularly well because the service itself accesses already-loaded models.
-
----
-
-## 4. Service Layer
-
-Disease inference is not implemented directly inside the API route.
-
-Instead:
+Handles:
 
 ```text
-API Route
-   ↓
-DiseaseService
-   ↓
-Validator
-   ↓
-FileManager
-   ↓
-DiseaseModel
-   ↓
-DiseaseAgent
+LLM reasoning
+Tool selection
+Tool orchestration
+Final response generation
 ```
 
-**Decision:** Introduce a service layer between HTTP endpoints and AI components.
+### DiseaseAgent
 
-**Benefit:** Business logic remains independent from FastAPI.
+Handles:
+
+```text
+Disease-specific domain interpretation
+Severity
+Recommended action
+Disease metadata
+```
+
+This prevents the general-purpose conversational agent from becoming tightly coupled to disease-specific rules.
 
 ---
 
-## 5. Separate Prediction from Reasoning
+# 8. RAG as an Agent Tool
 
-The project deliberately separates:
+The RAG system is no longer merely a standalone retrieval API.
+
+It is exposed as:
 
 ```text
-DiseaseModel → What disease was detected?
-DiseaseAgent → What does that prediction mean?
+KnowledgeRetrievalTool
 ```
 
-The YOLO model produces raw predictions.
+This is an important architectural shift.
 
-The agent adds:
-
-- severity
-- crop information
-- recommended action
-- RAG requirement
-- weather requirement
-
-**Decision:** Do not embed agricultural decision logic directly into the computer-vision model.
-
-This makes the system easier to extend to additional diseases and reasoning mechanisms.
+The agent can now decide when agricultural knowledge retrieval is necessary.
 
 ---
 
-## 6. RAG as a Separate Subsystem
+# 9. Offline Knowledge Processing
 
-The RAG implementation is isolated under:
+Expensive operations such as:
 
-```text
-app/rag/
-```
-
-with separate components for:
-
-- loading
+- PDF extraction
 - cleaning
 - chunking
-- embeddings
-- vector storage
-- retrieval
+- embedding
+- vector indexing
 
-**Decision:** Treat knowledge retrieval as an independent subsystem rather than tightly coupling it to disease detection.
+are performed separately from runtime inference.
 
-This is important because agricultural knowledge can evolve independently of the disease model.
+Runtime requests only perform retrieval.
+
+This keeps the API responsive and reduces unnecessary computation.
 
 ---
 
-## 7. Persistent Vector Storage
+# 10. Modular Extension Strategy
 
-ChromaDB is configured as a persistent local vector store.
+The current architecture makes it possible to introduce future agricultural tools such as:
 
 ```text
-knowledge_base/chroma/
+WeatherTool
+MarketPriceTool
+CropRecommendationTool
+GovernmentSchemeTool
+FertilizerRecommendationTool
+IrrigationTool
 ```
 
-**Decision:** Persist embeddings locally instead of recomputing them during application startup.
+without rewriting the Farmer Agent.
 
-**Benefit:**
-
-- faster application startup
-- reusable knowledge index
-- offline/local development
-- simple deployment architecture
-
----
-
-## 8. Offline Knowledge-Building Pipeline
-
-Knowledge ingestion is separated from runtime retrieval.
-
-The project uses:
+The intended architecture becomes:
 
 ```text
-build_vector_db.py
-```
-
-to:
-
-1. load documents
-2. clean them
-3. chunk them
-4. generate embeddings
-5. rebuild the vector database
-
-**Decision:** Perform expensive preprocessing offline rather than during API requests.
-
-This keeps runtime inference focused on serving users.
-
----
-
-## 9. Temporary File Lifecycle
-
-Uploaded images are stored using UUID-generated temporary filenames.
-
-After inference:
-
-```python
-finally:
-    FileManager.delete(path)
-```
-
-**Decision:** Treat uploaded images as temporary inference artifacts.
-
-**Benefit:**
-
-- avoids filename collisions
-- reduces unnecessary disk usage
-- limits persistence of user-uploaded images
-
----
-
-## 10. Configuration Through Environment Variables
-
-Runtime configuration is represented through a Pydantic settings class.
-
-Important settings include:
-
-```text
-PROJECT_NAME
-PROJECT_VERSION
-DEBUG
-HOST
-PORT
-DISEASE_MODEL_PATH
-EMBEDDING_MODEL
-WHISPER_MODEL
-LLM_MODEL
-```
-
-**Decision:** Keep environment-dependent configuration outside application code.
-
-This prepares the system for different development, testing, and production environments.
-
----
-
-## 11. Domain Knowledge Outside the ML Model
-
-Disease metadata currently lives in:
-
-```text
-app/core/constants.py
-```
-
-rather than inside the YOLO implementation.
-
-**Decision:** Keep domain rules separate from model inference.
-
-This allows disease-specific actions and severity rules to evolve without changing the inference implementation.
-
----
-
-# 🔄 Disease Detection Flow
-
-A disease-detection request follows this sequence:
-
-```text
-User uploads image
-        │
-        ▼
-FastAPI /disease/predict
-        │
-        ▼
-ImageValidator
-        │
-        ├── Extension check
-        └── Size check
-        │
-        ▼
-FileManager
-        │
-        ▼
-DiseaseService
-        │
-        ▼
-DiseaseModel
-        │
-        ▼
-YOLO inference
-        │
-        ▼
-Disease prediction
-        │
-        ▼
-DiseaseAgent
-        │
-        ▼
-Agricultural analysis
-        │
-        ▼
-Response
-        │
-        ▼
-Temporary image deleted
+                    FarmerAgent
+                         │
+        ┌────────────────┼─────────────────┐
+        │                │                 │
+        ▼                ▼                 ▼
+ Disease Tool       RAG Tool        Weather Tool
+        │                │                 │
+        ▼                ▼                 ▼
+       YOLO           ChromaDB         Weather API
 ```
 
 ---
 
-# 🔎 RAG Flow
+# 🔐 Safety-Oriented Design
 
-Knowledge ingestion:
+The Farmer Agent system prompt explicitly instructs the model:
 
-```text
-Agricultural PDF
-      │
-      ▼
-DocumentLoader
-      │
-      ▼
-TextCleaner
-      │
-      ▼
-TextChunker
-      │
-      ▼
-SentenceTransformer
-      │
-      ▼
-Embeddings
-      │
-      ▼
-ChromaDB
-```
+> Use tools whenever reliable external agricultural knowledge is required.
 
-Query retrieval:
+and:
 
-```text
-User Query
-    │
-    ▼
-Embedding Model
-    │
-    ▼
-Query Vector
-    │
-    ▼
-ChromaDB
-    │
-    ▼
-Top-K Relevant Chunks
-```
+> Never invent treatment advice.
+
+This establishes an important design principle:
+
+**Agricultural recommendations should be grounded in available domain tools and knowledge sources rather than relying entirely on unconstrained LLM generation.**
+
+This becomes increasingly important as more agricultural decision-support capabilities are added.
 
 ---
 
-# 🌐 API Endpoints
+# 🔌 API
 
-## Root
+## Chat
 
 ```http
-GET /
+POST /chat
 ```
 
-Returns a welcome message.
-
----
-
-## Health Check
-
-```http
-GET /health
-```
-
-Example:
+Request:
 
 ```json
 {
-  "status": "healthy",
-  "service": "AgriSahayak AI",
-  "version": "1.0.0"
+  "message": "How can I control tomato leaf curl disease?"
 }
 ```
 
----
+The Farmer Agent may invoke:
 
-## Disease Service Status
-
-```http
-GET /disease/status
+```text
+knowledge_retrieval
 ```
 
-Returns model/service availability information.
+before generating the final response.
 
 ---
 
@@ -848,73 +1012,74 @@ Returns model/service availability information.
 POST /disease/predict
 ```
 
-### Request
+Upload a plant image using multipart form-data.
 
-Multipart form-data:
+The image is:
 
-```text
-file = plant_image.jpg
-```
-
-### Response
-
-The current service returns structured disease analysis containing:
-
-```text
-crop
-disease
-confidence
-severity
-recommended_action
-needs_weather
-needs_rag
-```
+1. validated
+2. temporarily stored
+3. processed by YOLO
+4. interpreted by `DiseaseAgent`
+5. deleted after processing
 
 ---
 
-# 🛠️ Technology Stack
+## Disease Status
 
-### Backend
+```http
+GET /disease/status
+```
 
-- Python
-- FastAPI
-- Uvicorn
-- Pydantic
-
-### Computer Vision
-
-- Ultralytics YOLO
-- PyTorch
-- TorchVision
-- OpenCV
-
-### RAG
-
-- Sentence Transformers
-- ChromaDB
-- PyMuPDF
-
-### Knowledge Engineering
-
-- Requests
-- BeautifulSoup
-- lxml
-- Markdownify
-- Trafilatura
-- TQDM
-
-### Engineering
-
-- Loguru
-- Environment-based configuration
-- FastAPI dependency injection
-- Modular service architecture
+Returns the current disease service status.
 
 ---
 
-# ⚙️ Setup
+## Health
 
-## 1. Clone the repository
+```http
+GET /health
+```
+
+Used to verify backend availability.
+
+---
+
+# ⚙️ Configuration
+
+Create:
+
+```text
+backend/.env
+```
+
+Example:
+
+```env
+PROJECT_NAME=AgriSahayak AI
+PROJECT_VERSION=1.0.0
+DEBUG=True
+
+HOST=127.0.0.1
+PORT=8000
+
+DISEASE_MODEL_PATH=models/best.pt
+
+EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+
+WHISPER_MODEL=base
+
+LLM_MODEL=<ollama-model>
+
+OLLAMA_HOST=http://localhost:11434
+```
+
+The exact LLM model can be changed without modifying the Farmer Agent.
+
+---
+
+# ▶️ Running the Project
+
+## 1. Clone
 
 ```bash
 git clone <your-repository-url>
@@ -923,21 +1088,19 @@ cd Agrisahayak-ai
 
 ---
 
-## 2. Create a virtual environment
-
-```bash
-python -m venv .venv
-```
+## 2. Create virtual environment
 
 ### Windows
 
 ```bash
+python -m venv .venv
 .venv\Scripts\activate
 ```
 
 ### Linux / macOS
 
 ```bash
+python -m venv .venv
 source .venv/bin/activate
 ```
 
@@ -949,7 +1112,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-For the backend-specific environment:
+Or install backend dependencies:
 
 ```bash
 cd backend
@@ -958,38 +1121,35 @@ pip install -r requirements.txt
 
 ---
 
-## 4. Configure environment variables
+# 🦙 Running Ollama
 
-Create:
+Install and run Ollama separately.
+
+Make sure the configured model is available locally.
+
+For example:
+
+```bash
+ollama pull <model-name>
+```
+
+Then verify Ollama:
+
+```bash
+ollama list
+```
+
+The backend connects to the configured:
 
 ```text
-backend/.env
+OLLAMA_HOST
 ```
-
-with values corresponding to the settings required by the application.
-
-Example:
-
-```env
-PROJECT_NAME=AgriSahayak AI
-PROJECT_VERSION=1.0.0
-DEBUG=True
-HOST=127.0.0.1
-PORT=8000
-
-DISEASE_MODEL_PATH=models/best.pt
-EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-WHISPER_MODEL=base
-LLM_MODEL=<your-llm-model>
-```
-
-> The disease model file is not included in the repository. A trained YOLO model must be supplied separately at the configured path.
 
 ---
 
-# ▶️ Running the Backend
+# ▶️ Start the Backend
 
-From the `backend` directory:
+From the backend directory:
 
 ```bash
 uvicorn app.main:app --reload
@@ -1001,7 +1161,7 @@ The API will be available at:
 http://127.0.0.1:8000
 ```
 
-FastAPI documentation:
+Swagger documentation:
 
 ```text
 http://127.0.0.1:8000/docs
@@ -1009,171 +1169,184 @@ http://127.0.0.1:8000/docs
 
 ---
 
-# 🧠 Building the Vector Database
+# 🧠 Build the Knowledge Base
 
-The repository already contains a processed agricultural knowledge base and ChromaDB artifacts.
-
-To rebuild the vector database:
+To process the agricultural documents:
 
 ```bash
-cd backend
 python build_vector_db.py
 ```
 
-The pipeline will:
+The pipeline performs:
 
-1. Load agricultural PDFs.
-2. Extract text.
-3. Clean the text.
-4. Create overlapping chunks.
-5. Generate embeddings.
-6. Reset the ChromaDB collection.
-7. Store the new vectors.
+```text
+PDF
+ ↓
+Extraction
+ ↓
+Cleaning
+ ↓
+Chunking
+ ↓
+Embeddings
+ ↓
+ChromaDB
+```
 
 ---
 
-# 🧪 Testing Retrieval
+# 🧪 Testing
 
-The repository contains a simple retrieval test:
+The repository includes tests for:
+
+```text
+test_pipeline.py
+test_retriever.py
+test_tools.py
+```
+
+Tool registration can be inspected using:
 
 ```bash
-python test_retriever.py
+python test_tools.py
 ```
-
-The test performs semantic retrieval for a query such as:
-
-```text
-Tomato leaf curl disease
-```
-
-and prints the retrieved knowledge chunk.
 
 ---
 
-# 📊 Current Project State
+# 📊 Current Implementation Status
 
-The repository currently represents a **working backend foundation and RAG prototype**, rather than a fully completed end-to-end agricultural assistant.
+## Implemented
 
+- [x] FastAPI backend
+- [x] Health endpoint
+- [x] Disease prediction endpoint
+- [x] Image validation
+- [x] Temporary file handling
+- [x] YOLO disease inference integration
+- [x] Disease analysis agent
+- [x] Model registry
+- [x] Service registry
+- [x] Tool registry
+- [x] Base tool abstraction
+- [x] Disease detection tool
+- [x] Knowledge retrieval tool
+- [x] Farmer Agent
+- [x] LLM service abstraction
+- [x] Ollama integration
+- [x] LLM tool calling
+- [x] Iterative tool execution loop
+- [x] Agricultural PDF ingestion
+- [x] Text cleaning
+- [x] Text chunking
+- [x] Sentence Transformer embeddings
+- [x] ChromaDB vector store
+- [x] Semantic retrieval
+- [x] TNAU knowledge extraction pipeline
 
-### Planned / Extensible
+---
 
-- [ ] Fully trained production disease model
-- [ ] LLM-based agricultural response generation
-- [ ] Retrieval integrated directly into disease responses
-- [ ] Weather-aware recommendations
+# 🚧 In Progress / Future Work
+
+The architecture provides the foundation for several capabilities that are not yet fully implemented.
+
+- [ ] Integrate image upload directly into conversational `/chat`
+- [ ] Connect disease predictions and RAG results into a unified conversational workflow
+- [ ] Weather intelligence tool
+- [ ] Crop recommendation tool
+- [ ] Market price tool
+- [ ] Fertilizer recommendation tool
 - [ ] Voice interaction
-- [ ] Multi-crop disease coverage
-- [ ] More comprehensive disease knowledge
-- [ ] Frontend/mobile client
+- [ ] Multilingual farmer interaction
+- [ ] More crop/disease models
+- [ ] Production-grade model evaluation
+- [ ] RAG evaluation and grounding metrics
+- [ ] Frontend/mobile application
 - [ ] Production deployment
-- [ ] Automated evaluation of RAG retrieval quality
+- [ ] Persistent conversation memory
 
 ---
 
-# 🔮 Future Architecture
+# 🔮 Target Architecture
 
-The intended evolution of AgriSahayak is toward a multimodal agricultural AI assistant:
+The long-term objective is to evolve AgriSahayak into a **multimodal agricultural agent**.
 
 ```text
-                    ┌─────────────────────┐
-                    │      User           │
-                    └──────────┬──────────┘
-                               │
-                  ┌────────────▼────────────┐
-                  │     AgriSahayak AI      │
-                  │      Orchestrator       │
-                  └────────────┬────────────┘
-                               │
-       ┌───────────────────────┼────────────────────────┐
-       │                       │                        │
-       ▼                       ▼                        ▼
-┌──────────────┐       ┌──────────────┐        ┌──────────────┐
-│ Computer     │       │ Agricultural │        │   Weather    │
-│ Vision       │       │ RAG          │        │   Service    │
-│ YOLO         │       │ ChromaDB     │        │              │
-└──────────────┘       └──────────────┘        └──────────────┘
-       │                       │                        │
-       └───────────────────────┼────────────────────────┘
-                               ▼
-                     ┌──────────────────┐
-                     │       LLM        │
-                     │ Reasoning Layer  │
-                     └────────┬─────────┘
-                              ▼
-                     ┌──────────────────┐
-                     │ Farmer-Friendly  │
-                     │ Recommendation   │
-                     └──────────────────┘
+                              ┌──────────────────────┐
+                              │        Farmer        │
+                              └──────────┬───────────┘
+                                         │
+                                         ▼
+                              ┌──────────────────────┐
+                              │     AgriSahayak      │
+                              │     Farmer Agent     │
+                              └──────────┬───────────┘
+                                         │
+                  ┌──────────────────────┼──────────────────────┐
+                  │                      │                      │
+                  ▼                      ▼                      ▼
+          ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+          │ Disease Tool │      │   RAG Tool   │      │ Weather Tool │
+          └──────┬───────┘      └──────┬───────┘      └──────┬───────┘
+                 │                     │                     │
+                 ▼                     ▼                     ▼
+              YOLO                  ChromaDB             Weather API
+                 │                     │                     │
+                 └─────────────────────┼─────────────────────┘
+                                       │
+                                       ▼
+                              ┌──────────────────────┐
+                              │       LLM            │
+                              │  Reasoning Layer     │
+                              └──────────┬───────────┘
+                                         │
+                                         ▼
+                              ┌──────────────────────┐
+                              │ Farmer-Friendly      │
+                              │ Grounded Response    │
+                              └──────────────────────┘
 ```
-
-The long-term objective is to move from **disease classification** toward **context-aware agricultural decision support**.
 
 ---
 
 # 🎯 Design Philosophy
 
-AgriSahayak follows four major principles:
+AgriSahayak is built around five principles.
 
-### 1. Modular AI
+### 1. Agentic
 
-Computer vision, retrieval, embeddings, and reasoning are independent components.
+Use an LLM to determine which capabilities are required instead of hard-coding every workflow.
 
-### 2. Domain Grounding
+### 2. Tool-Grounded
 
-Agricultural recommendations should be grounded in agricultural reference material rather than relying entirely on general-purpose model knowledge.
+Give the LLM access to deterministic tools for specialized tasks.
 
-### 3. Separation of Concerns
+### 3. Knowledge-Grounded
 
-API handling, business logic, model inference, knowledge retrieval, and data processing remain separate.
+Use agricultural reference material when reliable domain knowledge is required.
 
-### 4. Extensibility
+### 4. Modular
 
-The architecture is designed to accommodate additional AI capabilities without replacing the existing backend foundation.
+Keep models, agents, tools, services, retrieval, and API layers independently replaceable.
 
----
+### 5. Extensible
 
-# 👩‍💻 Project Development
-
-The repository was developed incrementally, with the architecture evolving through several stages:
-
-```text
-Health API
-    ↓
-Disease Detection API
-    ↓
-Validation & Exception Handling
-    ↓
-Model Registry
-    ↓
-Disease Agent
-    ↓
-RAG Folder Structure
-    ↓
-PDF Document Loader
-    ↓
-Text Cleaning
-    ↓
-Chunking
-    ↓
-RAG Pipeline
-    ↓
-Agricultural Knowledge ETL
-    ↓
-Embedding Service
-    ↓
-ChromaDB
-    ↓
-Semantic Retrieval
-```
-
-This progression reflects the project's transition from a simple disease-detection backend into a broader **agricultural AI reasoning platform**.
-
+New agricultural capabilities should be addable as tools rather than requiring a redesign of the agent.
 
 ---
 
-# 🌱 AgriSahayak AI
+# 🌱 Project Vision
 
-**From identifying a crop disease to helping farmers understand what to do next.**
+AgriSahayak aims to evolve from a **crop disease detection system** into a **multimodal agricultural decision-support agent**.
+
+The final goal is not simply to answer:
+
+> *“What disease is this?”*
+
+but to help answer:
+
+> *“What is happening to my crop, why is it happening, what should I do, and what reliable agricultural information supports that recommendation?”*
+
+The current agentic + RAG architecture establishes the foundation for that system.
 
 ---
 
@@ -1181,4 +1354,8 @@ This progression reflects the project's transition from a simple disease-detecti
 
 Add the project's chosen license here.
 
+---
 
+## 🌾 AgriSahayak AI
+
+**An agentic agricultural assistant combining computer vision, RAG, and LLM-powered tool use.**
