@@ -1272,12 +1272,12 @@ The current agentic + RAG architecture establishes the foundation for that syste
 
 ---
 
-# 📜 License
-
-Add the project's chosen license here.
-
----
-
 ## 🌾 AgriSahayak AI
 
 **An agentic agricultural assistant combining computer vision, RAG, and LLM-powered tool use.**
+
+---
+
+# 📜 License
+
+Distributed under the MIT License. See 'LICENSE' for more information.
