@@ -386,38 +386,6 @@ knowledge_base/processed/
 
 ---
 
-# 11. 🕷️ Generic Agricultural Knowledge Pipeline
-
-The repository also contains a separate experimental knowledge-engineering pipeline under:
-
-```text
-generic_KB/
-```
-
-This pipeline extracts agricultural information from the **Tamil Nadu Agricultural University (TNAU)** website.
-
-Its architecture is:
-
-```text
-TNAU Website
-     ↓
-Crawler
-     ↓
-HTML Parser
-     ↓
-Content Cleaner
-     ↓
-Markdown Builder
-     ↓
-Normalizer
-     ↓
-Crop Knowledge Base
-```
-
-The pipeline supports crop-specific knowledge extraction and currently contains generated knowledge for crops such as tomato.
-
----
-
 # 🏗️ System Architecture
 
 The latest architecture can be represented as:
@@ -714,21 +682,6 @@ Agrisahayak-ai/
 │   ├── test_retriever.py
 │   └── test_tools.py
 │
-├── generic_KB/
-│   └── backend/
-│       └── app/
-│           ├── knowledge_base/
-│           │   └── crops/
-│           │
-│           └── knowledge_pipeline/
-│               ├── cleaner.py
-│               ├── config.py
-│               ├── crawler.py
-│               ├── markdown_builder.py
-│               ├── metadata.py
-│               ├── normalizer.py
-│               ├── parser.py
-│               └── utils.py
 │
 ├── data/
 │   └── sample images
@@ -1213,37 +1166,6 @@ python test_tools.py
 
 ---
 
-# 📊 Current Implementation Status
-
-## Implemented
-
-- [x] FastAPI backend
-- [x] Health endpoint
-- [x] Disease prediction endpoint
-- [x] Image validation
-- [x] Temporary file handling
-- [x] YOLO disease inference integration
-- [x] Disease analysis agent
-- [x] Model registry
-- [x] Service registry
-- [x] Tool registry
-- [x] Base tool abstraction
-- [x] Disease detection tool
-- [x] Knowledge retrieval tool
-- [x] Farmer Agent
-- [x] LLM service abstraction
-- [x] Ollama integration
-- [x] LLM tool calling
-- [x] Iterative tool execution loop
-- [x] Agricultural PDF ingestion
-- [x] Text cleaning
-- [x] Text chunking
-- [x] Sentence Transformer embeddings
-- [x] ChromaDB vector store
-- [x] Semantic retrieval
-- [x] TNAU knowledge extraction pipeline
-
----
 
 # 🚧 In Progress / Future Work
 
