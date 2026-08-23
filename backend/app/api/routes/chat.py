@@ -25,7 +25,7 @@ async def chat(
     ),
 ):
 
-    response = agent.run(
+    response = await agent.run(
         request.message
     )
 

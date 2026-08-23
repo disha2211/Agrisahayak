@@ -24,12 +24,17 @@ from app.tools.rag_tool import (
 from app.services.llm_service import LLMService
 from app.api.routes.chat import router as chat_router
 
+from app.services.weather_service import WeatherService
+from app.tools.weather_tool import WeatherTool
+
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting AgriSahayak AI Backend...")
+
     model_registry.load_models()
+
     service_registry.register(
     "vector_store",
     VectorStore(),
@@ -47,6 +52,16 @@ async def lifespan(app: FastAPI):
     "llm",
     LLMService(),
 )
+
+    service_registry.register(
+    "weather",
+    WeatherService(),
+)
+
+    tool_registry.register(
+    WeatherTool()
+)
+
     logger.success("All AI models loaded.")
     
     yield

@@ -1,4 +1,5 @@
 import json
+import inspect
 
 from app.core.services import service_registry
 from app.core.tools import tool_registry
@@ -19,7 +20,7 @@ class FarmerAgent:
             for tool in tool_registry.list_tools()
         ]
 
-    def _execute_tool(
+    async def _execute_tool(
         self,
         tool_name: str,
         arguments: dict,
@@ -29,9 +30,17 @@ class FarmerAgent:
             tool_name
         )
 
-        return tool.run(**arguments)
+        result = tool.run(
+            **arguments
+        )
 
-    def run(
+        if inspect.isawaitable(result):
+
+            result = await result
+
+        return result
+
+    async def run(
     self,
     user_message: str,
 ):
@@ -86,7 +95,7 @@ class FarmerAgent:
                     {},
                 )
 
-                result = self._execute_tool(
+                result = await self._execute_tool(
                     tool_name,
                     arguments,
                 )
