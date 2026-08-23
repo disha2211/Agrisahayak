@@ -7,9 +7,11 @@ class MarketPriceTool(BaseTool):
     name = "market_price"
 
     description = (
-        "Get agricultural market prices for a "
-        "specific crop and optionally a location."
-    )
+    "Get the latest available agricultural market "
+    "price for a specific crop and location. Use "
+    "this when the farmer asks about crop prices, "
+    "market prices, selling prices, or mandi prices."
+)
 
     def __init__(self):
 

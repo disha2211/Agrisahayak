@@ -7,11 +7,12 @@ class WeatherTool(BaseTool):
     name = "weather"
 
     description = (
-        "Get current weather and short-term "
-        "weather forecast for a farmer's location. "
-        "Useful for deciding whether weather conditions "
-        "may affect agricultural activities such as "
-        "spraying or field work."
+        "Get current weather and short-term forecast "
+        "for a farmer's location. Use this when the "
+        "farmer explicitly asks about weather or when "
+        "weather conditions are relevant to farming "
+        "activities such as spraying, irrigation, or "
+        "field work."
     )
 
     def __init__(self):

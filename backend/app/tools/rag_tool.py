@@ -7,10 +7,13 @@ class KnowledgeRetrievalTool(BaseTool):
     name = "knowledge_retrieval"
 
     description = (
-        "Search the agricultural knowledge base for "
-        "relevant information about crops, diseases, "
-        "treatments, cultivation practices, and "
-        "agricultural recommendations."
+                    "Search the agricultural knowledge base for "
+                "authoritative information about crop diseases, "
+                "disease symptoms, disease treatment, pesticides, "
+                "fungicides, crop management, and agricultural "
+                "recommendations. MUST be used when the farmer "
+                "asks what treatment or management is recommended "
+                "for a crop disease."
     )
 
     def __init__(self):

@@ -104,12 +104,122 @@ class WeatherService:
 
         return {
             "location": coordinates,
-            "current": weather.get(
-                "current",
-                {},
+            "weather": self._build_weather_summary(
+                weather
             ),
-            "hourly": weather.get(
-                "hourly",
-                {},
-            ),
+        }
+
+    def _build_weather_summary(
+    self,
+    weather: dict,
+):
+        current = weather.get("current", {})
+        hourly = weather.get("hourly", {})
+
+        times = hourly.get("time", [])
+        temperatures = hourly.get(
+            "temperature_2m", []
+        )
+        humidity = hourly.get(
+            "relative_humidity_2m", []
+        )
+        precipitation_probability = hourly.get(
+            "precipitation_probability", []
+        )
+        precipitation = hourly.get(
+            "precipitation", []
+        )
+        wind = hourly.get(
+            "wind_speed_10m", []
+        )
+
+        if not times:
+            return {
+                "current": current,
+                "summary": "No hourly forecast available.",
+            }
+
+        # Group forecast into days
+        daily = {}
+
+        for i, timestamp in enumerate(times):
+
+            date = timestamp.split("T")[0]
+
+            if date not in daily:
+                daily[date] = {
+                    "temperatures": [],
+                    "humidity": [],
+                    "rain_probability": [],
+                    "rain": [],
+                    "wind": [],
+                }
+
+            daily[date]["temperatures"].append(
+                temperatures[i]
+            )
+
+            daily[date]["humidity"].append(
+                humidity[i]
+            )
+
+            daily[date]["rain_probability"].append(
+                precipitation_probability[i]
+            )
+
+            daily[date]["rain"].append(
+                precipitation[i]
+            )
+
+            daily[date]["wind"].append(
+                wind[i]
+            )
+
+        forecast = []
+
+        for date, values in daily.items():
+
+            forecast.append(
+                {
+                    "date": date,
+                    "min_temperature": min(
+                        values["temperatures"]
+                    ),
+                    "max_temperature": max(
+                        values["temperatures"]
+                    ),
+                    "max_rain_probability": max(
+                        values["rain_probability"]
+                    ),
+                    "total_precipitation": round(
+                        sum(values["rain"]),
+                        2,
+                    ),
+                    "max_wind_speed": max(
+                        values["wind"]
+                    ),
+                    "average_humidity": round(
+                        sum(values["humidity"])
+                        / len(values["humidity"]),
+                        1,
+                    ),
+                }
+            )
+
+        return {
+            "current": {
+                "temperature": current.get(
+                    "temperature_2m"
+                ),
+                "humidity": current.get(
+                    "relative_humidity_2m"
+                ),
+                "precipitation": current.get(
+                    "precipitation"
+                ),
+                "wind_speed": current.get(
+                    "wind_speed_10m"
+                ),
+            },
+            "forecast": forecast,
         }
