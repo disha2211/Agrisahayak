@@ -27,6 +27,9 @@ from app.api.routes.chat import router as chat_router
 from app.services.weather_service import WeatherService
 from app.tools.weather_tool import WeatherTool
 
+from app.services.market_service import MarketService
+from app.tools.market_tool import MarketPriceTool
+
 
 
 @asynccontextmanager
@@ -60,6 +63,14 @@ async def lifespan(app: FastAPI):
 
     tool_registry.register(
     WeatherTool()
+)
+
+    service_registry.register(
+    "market",
+    MarketService(),
+)
+    tool_registry.register(
+    MarketPriceTool()
 )
 
     logger.success("All AI models loaded.")
