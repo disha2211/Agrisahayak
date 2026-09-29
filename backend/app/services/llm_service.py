@@ -1,4 +1,5 @@
 from app.core.config import settings
+from app.services.llm.groq import GroqProvider
 from app.services.llm.gemini import GeminiProvider
 
 
@@ -8,13 +9,15 @@ class LLMService:
         self.provider = self._create_provider()
 
     def _create_provider(self):
+
         provider = settings.LLM_PROVIDER.lower()
 
-        if provider == "gemini":
-            return GeminiProvider()
+        if provider == "groq":
+            return GroqProvider()
+
 
         raise ValueError(
-            f"Unsupported LLM provider: {settings.LLM_PROVIDER}"
+            f"Unsupported LLM provider: {provider}"
         )
 
     def get_model(self):
