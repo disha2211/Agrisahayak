@@ -1,43 +1,21 @@
-from ollama import Client
-
 from app.core.config import settings
-from app.core.logger import logger
+from app.services.llm.gemini import GeminiProvider
 
 
 class LLMService:
 
     def __init__(self):
+        self.provider = self._create_provider()
 
-        logger.info(
-            f"Initializing LLM: {settings.LLM_MODEL}"
+    def _create_provider(self):
+        provider = settings.LLM_PROVIDER.lower()
+
+        if provider == "gemini":
+            return GeminiProvider()
+
+        raise ValueError(
+            f"Unsupported LLM provider: {settings.LLM_PROVIDER}"
         )
 
-        self.client = Client(
-            host=settings.OLLAMA_HOST
-        )
-
-        self.model = settings.LLM_MODEL
-
-        logger.success(
-            "LLM service initialized."
-        )
-
-    def chat(
-        self,
-        messages: list,
-        tools: list | None = None,
-    ):
-
-        kwargs = {
-            "model": self.model,
-            "messages": messages,
-        }
-
-        if tools:
-            kwargs["tools"] = tools
-
-        response = self.client.chat(
-            **kwargs
-        )
-
-        return response
+    def get_model(self):
+        return self.provider.get_model()

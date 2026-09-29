@@ -10,8 +10,10 @@ class Settings(BaseSettings):
     DISEASE_MODEL_PATH: str
     EMBEDDING_MODEL: str
     WHISPER_MODEL: str
-    LLM_MODEL: str
-    OLLAMA_HOST: str
+    LLM_PROVIDER: str = "gemini"
+    LLM_MODEL: str = "gemini-3.8-flash"
+    GEMINI_API_KEY: str
+
     
 
     model_config = SettingsConfigDict(
