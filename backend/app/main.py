@@ -26,6 +26,10 @@ from app.tools.market_tool import MarketPriceTool
 from app.services.disease_service import DiseaseService
 from app.tools.disease_tool import DiseaseDetectionTool
 
+from app.api.routes.graph_chat import (
+    router as graph_chat_router,
+)
+
 
 
 @asynccontextmanager
@@ -89,3 +93,6 @@ app = FastAPI(
 app.include_router(health_router)
 app.include_router(disease_router)
 app.include_router(chat_router)
+app.include_router(
+    graph_chat_router
+)
