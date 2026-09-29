@@ -74,6 +74,8 @@ class KnowledgeRetrievalTool(BaseTool):
         )[0]
 
         return {
+            "source": "Agriculture-CPG-2020.pdf",
+            "data_status": "knowledge_base",
             "query": query,
             "documents": documents,
             "metadata": metadatas,

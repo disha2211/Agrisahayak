@@ -1,15 +1,14 @@
 import inspect
 import json
 
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage
+from app.core.prompts import FARMER_AGENT_SYSTEM_PROMPT
 
 from app.core.services import service_registry
 from app.core.tools import tool_registry
 
-
 def llm_node(state):
     llm_service = service_registry.get("llm")
-
     model = llm_service.get_model()
 
     tools = [
@@ -19,14 +18,16 @@ def llm_node(state):
 
     model_with_tools = model.bind_tools(tools)
 
-    response = model_with_tools.invoke(
-        state["messages"]
-    )
+    messages = [
+        SystemMessage(content=FARMER_AGENT_SYSTEM_PROMPT),
+        *state["messages"],
+    ]
+
+    response = model_with_tools.invoke(messages)
 
     return {
         "messages": [response]
     }
-
 
 async def tool_node(state):
     last_message = state["messages"][-1]

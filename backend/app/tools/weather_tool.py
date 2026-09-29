@@ -58,8 +58,15 @@ class WeatherTool(BaseTool):
         location: str,
         forecast_days: int = 3,
     ):
-
-        return await self.weather_service.get_forecast(
+        weather_data = await self.weather_service.get_forecast(
             location=location,
             forecast_days=forecast_days,
         )
+
+        return {
+            "source": "Open-Meteo",
+            "data_status": "forecast",
+            "location": location,
+            "forecast_days": forecast_days,
+            "weather": weather_data,
+        }

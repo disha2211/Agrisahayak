@@ -67,11 +67,12 @@ class MarketService:
 
         return {
             "found": True,
+            "source": "development_market_dataset",
+            "data_status": "development",
+            "record_date": str(latest["date"]),
+
             "crop": latest["crop"],
             "market": latest["market"],
             "location": latest["location"],
-            "price_per_kg": float(
-                latest["price_per_kg"]
-            ),
-            "date": latest["date"],
+            "price_per_kg": float(latest["price_per_kg"]),
         }
