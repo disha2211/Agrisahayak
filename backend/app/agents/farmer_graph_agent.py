@@ -29,7 +29,5 @@ class FarmerGraphAgent:
             result["messages"][-1]
         )
 
-        if isinstance(final_message, dict):
-            return final_message["content"]
-
+    
         return final_message.content
