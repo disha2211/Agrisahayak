@@ -1,26 +1,22 @@
+
 from app.core.services import service_registry
 from app.tools.base import BaseTool
 
 
 class DiseaseDetectionTool(BaseTool):
-
     name = "disease_detection"
 
     description = (
-        "Analyze a plant image and detect "
-        "possible plant diseases with confidence scores. "
-        "Use this tool only when an actual plant image "
-        "is available."
+        "Analyze the plant image attached to the current conversation "
+        "and detect possible diseases with confidence scores. "
+        "Use only when an uploaded plant image is available. "
+        "Do not use for text-only questions."
     )
 
     def __init__(self):
-
-        self.disease_service = (
-            service_registry.get("disease")
-        )
+        self.disease_service = service_registry.get("disease")
 
     def schema(self):
-
         return {
             "type": "function",
             "function": {
@@ -28,22 +24,10 @@ class DiseaseDetectionTool(BaseTool):
                 "description": self.description,
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        "image_path": {
-                            "type": "string",
-                            "description": (
-                                "Path to the actual "
-                                "uploaded plant image."
-                            ),
-                        },
-                    },
-                    "required": ["image_path"],
+                    "properties": {},
                 },
             },
         }
 
     def run(self, image_path: str):
-
-        return self.disease_service.predict(
-            image_path
-        )
+        return self.disease_service.predict(image_path)
