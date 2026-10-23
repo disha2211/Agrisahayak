@@ -9,6 +9,9 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.services.speech_service import transcribe_audio
 
+from fastapi import Response
+from app.services.tts_service import synthesize_speech
+
 router = APIRouter(prefix="/voice", tags=["Voice Assistant"])
 
 ALLOWED_EXTENSIONS = {
@@ -220,3 +223,37 @@ async def transcribe(
                     os.remove(path)
                 except OSError:
                     pass
+
+
+@router.post("/synthesize")
+async def synthesize(
+    text: str = Form(...),
+    language: str = Form("en"),
+):
+    """Convert text into speech and return an MP3 audio response."""
+
+    try:
+        audio_bytes = await synthesize_speech(text, language)
+
+        return Response(
+            content=audio_bytes,
+            media_type="audio/mpeg",
+            headers={
+                "Content-Disposition": 'attachment; filename="speech.mp3"'
+            },
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
+
+    except Exception as exc:
+        from app.core.logger import logger
+        logger.exception("Speech synthesis failed")
+
+        raise HTTPException(
+            status_code=502,
+            detail="Speech generation failed. Check the backend logs.",
+        ) from exc
