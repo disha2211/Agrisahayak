@@ -29,6 +29,7 @@ from app.tools.disease_tool import DiseaseDetectionTool
 from app.api.routes.graph_chat import (
     router as graph_chat_router,
 )
+from app.api.routes.voice import router as voice_router
 
 
 
@@ -96,3 +97,4 @@ app.include_router(chat_router)
 app.include_router(
     graph_chat_router
 )
+app.include_router(voice_router)

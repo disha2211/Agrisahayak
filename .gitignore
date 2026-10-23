@@ -29,3 +29,5 @@ vector_db/
 
 # Temporary files
 *.tmp
+
+data/

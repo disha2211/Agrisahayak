@@ -1,0 +1,222 @@
+import subprocess
+import asyncio
+import os
+import shutil
+import tempfile
+from pathlib import Path
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+
+from app.services.speech_service import transcribe_audio
+
+router = APIRouter(prefix="/voice", tags=["Voice Assistant"])
+
+ALLOWED_EXTENSIONS = {
+    ".wav",
+    ".mp3",
+    ".mpeg",
+    ".m4a",
+    ".webm",
+    ".ogg",
+    ".mp4",
+}
+
+MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
+
+LANGUAGE_CODES = {
+    "auto": None,
+    "en": "en",
+    "english": "en",
+    "te": "te",
+    "telugu": "te",
+    "hi": "hi",
+    "hindi": "hi",
+}
+
+# Find FFmpeg through PATH, with a fallback to your Windows installation.
+FFMPEG_PATH = (
+    shutil.which("ffmpeg")
+    or r"C:\ffmpeg\ffmpeg-9.0.2-essentials_build\bin\ffmpeg.exe"
+)
+
+
+
+def _normalize_audio_sync(input_path: str, output_path: str) -> None:
+    """Convert uploaded audio to mono, 16 kHz PCM WAV."""
+
+    if not os.path.isfile(FFMPEG_PATH):
+        raise HTTPException(
+            status_code=500,
+            detail="FFmpeg executable was not found. Check FFMPEG_PATH.",
+        )
+
+    try:
+        result = subprocess.run(
+            [
+                FFMPEG_PATH,
+                "-hide_banner",
+                "-loglevel", "error",
+                "-y",
+                "-i", input_path,
+                "-vn",
+                "-ac", "1",
+                "-ar", "16000",
+                "-c:a", "pcm_s16le",
+                output_path,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        raise HTTPException(
+            status_code=422,
+            detail="Audio conversion timed out. Try a shorter recording.",
+        )
+
+    if result.returncode != 0 or not os.path.isfile(output_path):
+        from app.core.logger import logger
+        logger.error("FFmpeg conversion failed: %s", result.stderr[-2000:])
+
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Could not decode this audio file. "
+                "Try another recording in a supported format."
+            ),
+        )
+
+    if os.path.getsize(output_path) == 0:
+        raise HTTPException(
+            status_code=422,
+            detail="The uploaded audio could not be converted.",
+        )
+
+
+async def normalize_audio(input_path: str, output_path: str) -> None:
+    """Run audio conversion without blocking FastAPI's event loop."""
+    await asyncio.to_thread(
+        _normalize_audio_sync,
+        input_path,
+        output_path,
+    )
+
+
+@router.post("/transcribe")
+async def transcribe(
+    audio: UploadFile = File(...),
+    language: str = Form("auto"),
+):
+    """
+    Transcribe uploaded audio using SraVaani.
+
+    Supported language options: auto, en, te, hi.
+    Audio is normalized internally before transcription.
+    """
+
+    extension = Path(audio.filename or "").suffix.lower()
+
+    if extension not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unsupported audio format. "
+                "Use WAV, MP3, MPEG, M4A, WEBM, OGG, or MP4."
+            ),
+        )
+
+    language_key = language.strip().lower()
+
+    if language_key not in LANGUAGE_CODES:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Language must be auto, en, english, "
+                "te, telugu, hi, or hindi."
+            ),
+        )
+
+    input_path = None
+    normalized_path = None
+
+    try:
+        # Save the uploaded recording temporarily.
+        with tempfile.NamedTemporaryFile(
+            suffix=extension,
+            delete=False,
+        ) as temp_file:
+            input_path = temp_file.name
+            total_size = 0
+
+            while True:
+                chunk = await audio.read(1024 * 1024)
+
+                if not chunk:
+                    break
+
+                total_size += len(chunk)
+
+                if total_size > MAX_FILE_SIZE:
+                    raise HTTPException(
+                        status_code=413,
+                        detail="Audio file exceeds the 20 MB limit.",
+                    )
+
+                temp_file.write(chunk)
+
+        if total_size == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="The uploaded audio file is empty.",
+            )
+
+        # Create a temporary WAV destination.
+        with tempfile.NamedTemporaryFile(
+            suffix=".wav",
+            delete=False,
+        ) as temp_wav:
+            normalized_path = temp_wav.name
+
+        # Convert all accepted formats to a consistent audio format.
+        await normalize_audio(input_path, normalized_path)
+
+        # SraVaani performs automatic language detection.
+        result = await transcribe_audio(normalized_path)
+        transcript = result.get("text", "").strip()
+
+        if not transcript:
+            raise HTTPException(
+                status_code=422,
+                detail="No speech could be recognized in the audio.",
+            )
+
+        return {
+            "success": True,
+            "text": transcript,
+            "detected_language": None,
+            "language_probability": None,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        # Keep internal exception details in server logs only.
+        from app.core.logger import logger
+        logger.exception("Audio transcription failed")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Audio transcription failed. Check the backend logs.",
+        )
+
+    finally:
+        await audio.close()
+
+        for path in (input_path, normalized_path):
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass

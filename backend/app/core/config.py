@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = "groq"
     LLM_MODEL: str = "openai/gpt-oss-120b"
     GROQ_API_KEY: str
+    HF_TOKEN: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
