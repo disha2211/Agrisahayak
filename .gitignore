@@ -31,3 +31,5 @@ vector_db/
 *.tmp
 
 data/
+
+knowledge_base\chroma
