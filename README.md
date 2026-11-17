@@ -1,4 +1,4 @@
-# 🌾 AgriSahayak AI
+# 🌾 AgriSahayak 
 
 AgriSahayak is an **agentic agricultural assistant** that combines LLM-based tool orchestration, agricultural RAG, crop-disease detection, weather data, market data, and voice interaction in a FastAPI backend.
 
