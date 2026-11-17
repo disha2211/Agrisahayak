@@ -4,13 +4,17 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
+import base64
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File,  Depends, Form, HTTPException, UploadFile
 
 from app.services.speech_service import transcribe_audio
 
 from fastapi import Response
 from app.services.tts_service import synthesize_speech
+
+from app.api.dependencies import get_farmer_graph_agent
+from app.agents.farmer_graph_agent import FarmerGraphAgent
 
 router = APIRouter(prefix="/voice", tags=["Voice Assistant"])
 
@@ -257,3 +261,145 @@ async def synthesize(
             status_code=502,
             detail="Speech generation failed. Check the backend logs.",
         ) from exc
+
+
+
+@router.post("/chat")
+async def voice_chat(
+    audio: UploadFile = File(...),
+    language: str = Form("en"),
+    agent: FarmerGraphAgent = Depends(get_farmer_graph_agent),
+):
+    """
+    Audio -> STT -> existing Farmer Agent -> TTS.
+    Returns transcript, agent answer, and base64-encoded MP3.
+    """
+
+    language_key = language.strip().lower()
+
+    if language_key not in {"en", "english", "te", "telugu", "hi", "hindi"}:
+        raise HTTPException(
+            status_code=400,
+            detail="Language must be en, te, or hi.",
+        )
+
+    language_key = {
+        "english": "en",
+        "telugu": "te",
+        "hindi": "hi",
+    }.get(language_key, language_key)
+
+    extension = Path(audio.filename or "").suffix.lower()
+
+    if extension not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported audio format.",
+        )
+
+    input_path = None
+    normalized_path = None
+
+    try:
+        # 1. Save the uploaded recording.
+        with tempfile.NamedTemporaryFile(
+            suffix=extension,
+            delete=False,
+        ) as temp_file:
+            input_path = temp_file.name
+            total_size = 0
+
+            while True:
+                chunk = await audio.read(1024 * 1024)
+
+                if not chunk:
+                    break
+
+                total_size += len(chunk)
+
+                if total_size > MAX_FILE_SIZE:
+                    raise HTTPException(
+                        status_code=413,
+                        detail="Audio file exceeds the 20 MB limit.",
+                    )
+
+                temp_file.write(chunk)
+
+        if total_size == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="The uploaded audio file is empty.",
+            )
+
+        # 2. Normalize audio for SraVaani.
+        with tempfile.NamedTemporaryFile(
+            suffix=".wav",
+            delete=False,
+        ) as temp_wav:
+            normalized_path = temp_wav.name
+
+        await normalize_audio(input_path, normalized_path)
+
+        # 3. Speech-to-text.
+        stt_result = await transcribe_audio(normalized_path)
+        transcript = stt_result.get("text", "").strip()
+
+        if not transcript:
+            raise HTTPException(
+                status_code=422,
+                detail="No speech could be recognized.",
+            )
+
+        # 4. Call the existing Farmer Agent.
+        answer = await agent.run(transcript)
+
+        if not isinstance(answer, str):
+            answer = str(answer)
+
+        answer = answer.strip()
+
+        if not answer:
+            raise HTTPException(
+                status_code=502,
+                detail="The Farmer Agent returned an empty answer.",
+            )
+
+        # 5. Convert the answer to spoken audio.
+        audio_bytes = await synthesize_speech(
+            answer,
+            language_key,
+        )
+
+        # 6. Return all results together.
+        return {
+            "success": True,
+            "transcript": transcript,
+            "answer": answer,
+            "audio_format": "mp3",
+            "audio_base64": base64.b64encode(
+                audio_bytes
+            ).decode("ascii"),
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        from app.core.logger import logger
+        logger.exception("Voice chat failed")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Voice chat failed. Check the backend logs.",
+        )
+
+    finally:
+        await audio.close()
+
+        for path in (input_path, normalized_path):
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+
